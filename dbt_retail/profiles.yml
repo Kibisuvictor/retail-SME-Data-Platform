@@ -1,0 +1,25 @@
+retail_gcp:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+
+    dev:
+      type: bigquery
+      method: oauth                        # uses gcloud auth — no key file needed
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: retail_staging              # default dataset (overridden per model)
+      location: "{{ env_var('BQ_LOCATION', 'EU') }}"
+      threads: 4
+      timeout_seconds: 300
+      priority: interactive
+      retries: 1
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: retail_staging
+      location: "{{ env_var('BQ_LOCATION', 'EU') }}"
+      threads: 4
+      timeout_seconds: 300
+      priority: batch                      # batch priority = cheaper on free tier
+      retries: 2

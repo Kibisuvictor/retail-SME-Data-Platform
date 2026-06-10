@@ -1,0 +1,142 @@
+version: 2
+
+models:
+
+  - name: stg_products
+    description: "Cleaned product master. Deduplicates by keeping latest entry per product name."
+    columns:
+      - name: product_key
+        description: "Slugified product name — join key across all models."
+        tests:
+          - unique
+          - not_null
+      - name: product_name
+        tests: [not_null]
+      - name: category
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Cleaning Supplies
+                - Cooking & Kitchen
+                - Food & Groceries
+                - Personal Care
+                - Baby & Child
+                - Health & Wellness
+                - Stationery & Office
+                - Home & Bedding
+                - Electronics & Lighting
+                - Hardware & Tools
+                - Beverages
+                - Other
+      - name: unit_of_measure
+        tests:
+          - accepted_values:
+              values: [Piece, Kg, Litre, Pack]
+      - name: selling_price
+        tests: [not_null]
+      - name: is_active
+        tests: [not_null]
+
+  - name: stg_sales
+    description: "Cleaned, typed sales transactions with derived amounts."
+    columns:
+      - name: sale_id
+        description: "MD5 surrogate key."
+        tests: [unique, not_null]
+      - name: sale_date
+        tests: [not_null]
+      - name: salesperson_name
+        tests: [not_null]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_key
+      - name: units_sold
+        tests: [not_null]
+      - name: unit_price
+        tests: [not_null]
+      - name: payment_method
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['M-Pesa', 'Bank']
+  - name: stg_expenses
+    description: "Cleaned expense records."
+    columns:
+      - name: expense_id
+        tests: [unique, not_null]
+      - name: expense_date
+        tests: [not_null]
+      - name: expense_category
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Water
+                - Stationery
+                - Supplier Transport
+                - Customer Delivery
+                - Other
+      - name: amount
+        tests: [not_null]
+      - name: paid_via
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['M-Pesa', 'Bank']
+
+  - name: stg_returns
+    description: "Cleaned return transactions from the dedicated Returns Form."
+    columns:
+      - name: return_id
+        description: "MD5 surrogate key."
+        tests: [unique, not_null]
+      - name: return_date
+        tests: [not_null]
+      - name: salesperson_name
+        tests: [not_null]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_key
+      - name: units_returned
+        tests: [not_null]
+      - name: original_unit_price
+        tests: [not_null]
+      - name: return_reason
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - Defective
+                - Wrong Item
+                - Customer Changed Mind
+                - Other
+      - name: refund_method
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['M-Pesa', 'Bank', 'Store Credit', 'No Refund']
+
+  - name: stg_inventory_purchases
+    description: "Cleaned inventory purchase records."
+    columns:
+      - name: purchase_id
+        tests: [unique, not_null]
+      - name: purchase_date
+        tests: [not_null]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_key
+      - name: units_purchased
+        tests: [not_null]
+      - name: unit_cost
+        tests: [not_null]

@@ -1,0 +1,84 @@
+name: Daily Data Pipeline
+
+# Runs the full pipeline: Google Sheets → BigQuery (Python ETL) → dbt run → dbt test
+#
+# Triggers:
+#   - Every day at 21:00 EAT (18:00 UTC)
+#   - Manually via the "Run workflow" button in the Actions tab
+#   - On every push to main (so code changes are validated immediately)
+
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 18:00 UTC = 21:00 EAT (Nairobi)
+  workflow_dispatch:        # manual "Run workflow" button
+  push:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+  BQ_LOCATION: EU
+  DBT_TARGET: dev
+
+jobs:
+  pipeline:
+    name: ETL + dbt
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Authenticates with the service account key.
+      # This writes a credentials file and sets GOOGLE_APPLICATION_CREDENTIALS
+      # automatically — both the ETL script and dbt pick it up from there.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r etl/requirements.txt
+          pip install dbt-bigquery==1.11.1
+
+      # ── Step 1: Extract from Google Sheets → load BigQuery raw tables ──
+      - name: Run ETL (Sheets → BigQuery)
+        run: python etl/extract_load.py
+
+      # ── Step 2: dbt transformations ──
+      - name: Install dbt packages
+        working-directory: dbt_retail
+        run: dbt deps --profiles-dir .
+
+      - name: dbt run
+        working-directory: dbt_retail
+        run: dbt run --profiles-dir .
+
+      # ── Step 3: dbt tests (failures don't block — they alert) ──
+      - name: dbt test
+        working-directory: dbt_retail
+        run: dbt test --profiles-dir .
+        continue-on-error: true
+        id: dbt_test
+
+      - name: Warn if tests failed
+        if: steps.dbt_test.outcome == 'failure'
+        run: echo "::warning::Some dbt tests failed — data was loaded but check quality issues in the logs above."
+
+      # ── Debugging artifacts on failure ──
+      - name: Upload dbt logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-logs-${{ github.run_id }}
+          path: |
+            dbt_retail/logs/
+            dbt_retail/target/run_results.json
+          retention-days: 7

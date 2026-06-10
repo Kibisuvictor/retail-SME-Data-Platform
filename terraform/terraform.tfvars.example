@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────
+# terraform.tfvars.example
+# Copy to terraform.tfvars and fill in your values.
+# terraform.tfvars is in .gitignore — NEVER commit it.
+# ─────────────────────────────────────────────────────────
+
+# Your GCP project ID
+# Find it at console.cloud.google.com → project selector dropdown
+project_id = "your-project-id-here"
+
+# BigQuery location
+# EU = data stored in Europe (recommended — GDPR alignment)
+# US = data stored in United States
+bq_location = "EU"
+
+# GCP region for Cloud Scheduler
+# europe-west1 = Belgium (closest full-featured region to Kenya)
+region = "europe-west1"
+
+# Google Sheet ID
+# From the URL: https://docs.google.com/spreadsheets/d/THIS_PART/edit
+google_sheet_id = "your_google_sheet_id_here"
+
+# Your email — gets permissions to run dbt and query BigQuery
+dbt_runner_email = "you@gmail.com"
+
+# Emails that can view dashboards in Looker Studio
+# Add the business owner's email here
+dashboard_viewer_emails = [
+  "owner@gmail.com",
+  # "manager@gmail.com",
+]
+
+# Cron schedule for daily dbt run (UTC time)
+# 0 3 * * * = 3:00 AM UTC = 6:00 AM EAT (Nairobi)
+dbt_schedule = "0 3 * * *"
+
+# Environment: dev or prod
+environment = "prod"

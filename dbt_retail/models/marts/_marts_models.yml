@@ -1,0 +1,67 @@
+version: 2
+
+models:
+
+  - name: inventory_position
+    description: >
+      Current stock per product — derived from all movements
+      (purchases minus sales plus returns). Never manually entered.
+    columns:
+      - name: product_key
+        tests: [unique, not_null]
+      - name: stock_on_hand
+        description: "total_purchased - total_sold + total_returned"
+      - name: needs_reorder
+        description: "TRUE when stock_on_hand <= reorder_level"
+
+  - name: daily_sales_summary
+    description: "One row per day. Powers all time-series charts."
+    columns:
+      - name: sale_date
+        tests: [unique, not_null]
+
+  - name: product_performance
+    description: "Per-product revenue, volume, and estimated profit."
+    columns:
+      - name: product_key
+        tests: [unique, not_null]
+
+  - name: salesperson_performance
+    description: "Per-salesperson transaction and revenue metrics."
+    columns:
+      - name: salesperson_name
+        tests: [unique, not_null]
+
+  - name: expense_summary
+    description: "Daily expense totals by category."
+
+  - name: monthly_profit
+    description: "Monthly P&L: revenue minus returns, COGS, and operating expenses."
+
+  - name: returns_analysis
+    description: >
+      Return transactions enriched with product info, return rates, and all
+      dimensions needed for the Returns Analysis dashboard in Looker Studio.
+    columns:
+      - name: return_id
+        tests: [unique, not_null]
+      - name: return_date
+        tests: [not_null]
+      - name: return_reason
+        tests:
+          - accepted_values:
+              values:
+                - Defective
+                - Wrong Item
+                - Customer Changed Mind
+                - Other
+      - name: refund_method
+        tests:
+          - accepted_values:
+              values: ['M-Pesa', 'Bank', 'Store Credit', 'No Refund']
+
+  - name: customer_insights
+    description: "Per-customer purchase summary. Phone numbers masked for privacy."
+    columns:
+      - name: customer_phone_masked
+        description: "Format: 07XX****XX"

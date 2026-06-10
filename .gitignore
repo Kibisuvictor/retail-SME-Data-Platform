@@ -1,0 +1,42 @@
+# Environment — NEVER commit
+.env
+
+# GCP credentials — NEVER commit
+credentials/
+*.json
+service_account.json
+application_default_credentials.json
+
+# Terraform — NEVER commit state or tfvars
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/tfplan
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/crash.log
+
+# dbt
+dbt_retail/target/
+dbt_retail/dbt_packages/
+dbt_retail/logs/
+dbt_retail/.user.yml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
