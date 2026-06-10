@@ -365,11 +365,15 @@ On Android or iPhone:
 
 ## Refreshing Data
 
-BigQuery external tables read from Google Sheets **live** on every query.  
-This means Looker Studio dashboards show data from the current state of the Sheet.
+Data flows on the daily pipeline schedule, not live:
 
-After running `dbt run`, the staging and marts tables are refreshed.  
-The external tables (`retail_raw.*`) always reflect the latest Sheet data with no manual step.
+1. **21:00 EAT** — GitHub Actions runs the ETL (Sheets → `retail_raw`) then dbt
+   rebuilds `retail_staging` and `retail_marts`.
+2. Looker Studio queries the marts, but **caches results (default up to 12 hours)**.
 
-**For the owner:** data is always current as long as `dbt run` has been executed today.  
-This happens automatically via the daily cron or GitHub Actions schedule.
+**One-time setting:** Resource → Manage added data sources → Edit each source →
+set **Data freshness** to **1 hour**. Dashboards opened in the morning then always
+show the previous evening's complete data. Viewers can also force-refresh with
+the ⟳ icon at the top of the report.
+
+No GCP-side configuration is needed for freshness — only this Looker Studio setting.

@@ -1,5 +1,11 @@
 # Terraform Setup Guide
 
+> **Updated architecture:** Terraform no longer manages BigQuery external tables —
+> ingestion is handled by `etl/extract_load.py` (see `bigquery_setup.md`).
+> Terraform now manages: GCP APIs, the 3 BigQuery datasets, service accounts,
+> IAM bindings, and (optionally) Cloud Scheduler — though scheduling has moved
+> to GitHub Actions, so `scheduler.tf` can be deleted if you prefer a tidy setup.
+
 Complete guide to provisioning the retail data platform infrastructure with Terraform.  
 Run time: **~5 minutes** after prerequisites are met.
 
@@ -11,7 +17,6 @@ Run time: **~5 minutes** after prerequisites are met.
 |----------|------|-------------|
 | GCP APIs | `main.tf` | BigQuery, Sheets, Drive, Scheduler, IAM |
 | BigQuery datasets | `bigquery.tf` | `retail_raw`, `retail_staging`, `retail_marts` |
-| External tables | `bigquery.tf` | 4 tables pointing at Google Sheets tabs |
 | Service accounts | `iam.tf` | `retail-dbt-runner`, `retail-scheduler` |
 | IAM bindings | `iam.tf` | Least-privilege access for all identities |
 | Cloud Scheduler | `scheduler.tf` | Daily dbt trigger at 06:00 EAT |
