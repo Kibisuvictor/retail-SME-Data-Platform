@@ -40,3 +40,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Virtual environments — any name, any location
+.dbt-env/
+**/.dbt-env/
+**/pyvenv.cfg
+**/site-packages/
