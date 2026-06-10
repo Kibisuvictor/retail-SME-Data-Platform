@@ -39,7 +39,7 @@ cleaned AS (
             )
         ))                                                          AS return_id,
 
-        SAFE_CAST(Date_of_Return AS DATE)                           AS return_date,
+        {{ parse_form_date('Date_of_Return') }}                     AS return_date,
         UPPER(TRIM(Salesperson_Name))                               AS salesperson_name,
 
         LOWER(
@@ -49,15 +49,15 @@ cleaned AS (
             )
         )                                                           AS product_key,
 
-        SAFE_CAST(Units_Returned AS INT64)                          AS units_returned,
+        {{ parse_form_int('Units_Returned') }}                      AS units_returned,
 
         COALESCE(
-            SAFE_CAST(Original_Unit_Price_KES AS NUMERIC), 0
+            {{ parse_form_number('Original_Unit_Price_KES') }}, 0
         )                                                           AS original_unit_price,
 
         ROUND(
-            SAFE_CAST(Units_Returned AS INT64)
-            * COALESCE(SAFE_CAST(Original_Unit_Price_KES AS NUMERIC), 0),
+            {{ parse_form_int('Units_Returned') }}
+            * COALESCE({{ parse_form_number('Original_Unit_Price_KES') }}, 0),
             2
         )                                                           AS return_value,
 
@@ -74,11 +74,11 @@ cleaned AS (
         END                                                         AS customer_phone,
 
         NULLIF(TRIM(COALESCE(Notes, '')), '')                       AS notes,
-        SAFE_CAST(Timestamp AS TIMESTAMP)                           AS submitted_at
+        {{ parse_form_timestamp('Timestamp') }}                     AS submitted_at
 
     FROM source
-    WHERE SAFE_CAST(Units_Returned AS INT64) > 0
-      AND SAFE_CAST(Date_of_Return AS DATE) IS NOT NULL
+    WHERE {{ parse_form_int('Units_Returned') }} > 0
+      AND {{ parse_form_date('Date_of_Return') }} IS NOT NULL
 )
 
 SELECT * FROM cleaned

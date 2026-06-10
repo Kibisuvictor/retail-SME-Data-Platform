@@ -34,17 +34,17 @@ cleaned AS (
             )
         ))                                              AS expense_id,
 
-        SAFE_CAST(Date_of_Expense AS DATE)              AS expense_date,
+        {{ parse_form_date('Date_of_Expense') }}        AS expense_date,
         TRIM(Expense_Category)                          AS expense_category,
-        SAFE_CAST(Amount_KES AS NUMERIC)                AS amount,
+        {{ parse_form_number('Amount_KES') }}           AS amount,
         NULLIF(TRIM(COALESCE(Description, '')), '')     AS description,
         TRIM(Paid_Via)                                  AS paid_via,
         UPPER(TRIM(Recorded_By))                        AS recorded_by,
-        SAFE_CAST(Timestamp AS TIMESTAMP)               AS submitted_at
+        {{ parse_form_timestamp('Timestamp') }}         AS submitted_at
 
     FROM source
-    WHERE SAFE_CAST(Amount_KES AS NUMERIC) > 0
-      AND SAFE_CAST(Date_of_Expense AS DATE) IS NOT NULL
+    WHERE {{ parse_form_number('Amount_KES') }} > 0
+      AND {{ parse_form_date('Date_of_Expense') }} IS NOT NULL
 )
 
 SELECT * FROM cleaned

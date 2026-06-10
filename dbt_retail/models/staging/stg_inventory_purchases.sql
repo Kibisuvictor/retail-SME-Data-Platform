@@ -35,7 +35,7 @@ cleaned AS (
             )
         ))                                                              AS purchase_id,
 
-        SAFE_CAST(Date_of_Purchase AS DATE)                             AS purchase_date,
+        {{ parse_form_date('Date_of_Purchase') }}                       AS purchase_date,
 
         -- product_key must match slug in stg_products
         LOWER(
@@ -45,17 +45,17 @@ cleaned AS (
             )
         )                                                               AS product_key,
 
-        SAFE_CAST(Units_Purchased AS INT64)                             AS units_purchased,
-        SAFE_CAST(Unit_Cost_KES AS NUMERIC)                             AS unit_cost,
+        {{ parse_form_int('Units_Purchased') }}                         AS units_purchased,
+        {{ parse_form_number('Unit_Cost_KES') }}                        AS unit_cost,
         NULLIF(TRIM(COALESCE(Supplier_Name, '')), '')                   AS supplier_name,
         TRIM(Payment_Method)                                            AS payment_method,
         NULLIF(TRIM(COALESCE(Notes_Comments, '')), '')                  AS notes,
-        SAFE_CAST(Timestamp AS TIMESTAMP)                               AS submitted_at
+        {{ parse_form_timestamp('Timestamp') }}                         AS submitted_at
 
     FROM source
-    WHERE SAFE_CAST(Units_Purchased AS INT64) > 0
-      AND SAFE_CAST(Unit_Cost_KES AS NUMERIC) > 0
-      AND SAFE_CAST(Date_of_Purchase AS DATE) IS NOT NULL
+    WHERE {{ parse_form_int('Units_Purchased') }} > 0
+      AND {{ parse_form_number('Unit_Cost_KES') }} > 0
+      AND {{ parse_form_date('Date_of_Purchase') }} IS NOT NULL
 )
 
 SELECT

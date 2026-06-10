@@ -41,7 +41,7 @@ cleaned AS (
             )
         ))                                                          AS sale_id,
 
-        SAFE_CAST(Date AS DATE)                                     AS sale_date,
+        {{ parse_form_date('Date') }}                               AS sale_date,
         UPPER(TRIM(Salesperson_Name))                               AS salesperson_name,
 
         LOWER(
@@ -51,9 +51,9 @@ cleaned AS (
             )
         )                                                           AS product_key,
 
-        SAFE_CAST(Units_Sold AS INT64)                              AS units_sold,
-        COALESCE(SAFE_CAST(Unit_Price_KES AS NUMERIC), 0)           AS unit_price,
-        COALESCE(SAFE_CAST(Discount_Amount_KES AS NUMERIC), 0)      AS discount_amount,
+        {{ parse_form_int('Units_Sold') }}                          AS units_sold,
+        COALESCE({{ parse_form_number('Unit_Price_KES') }}, 0)      AS unit_price,
+        COALESCE({{ parse_form_number('Discount_Amount_KES') }}, 0) AS discount_amount,
         TRIM(Payment_Method)                                        AS payment_method,
 
         -- Phone validation: null if not a valid Kenyan mobile number
@@ -68,11 +68,11 @@ cleaned AS (
 
         TRIM(COALESCE(Customer_Type, ''))                           AS customer_type,
         NULLIF(TRIM(COALESCE(Notes, '')), '')                       AS notes,
-        SAFE_CAST(Timestamp AS TIMESTAMP)                           AS submitted_at
+        {{ parse_form_timestamp('Timestamp') }}                     AS submitted_at
 
     FROM source
-    WHERE SAFE_CAST(Units_Sold AS INT64) > 0
-      AND SAFE_CAST(Date AS DATE) IS NOT NULL
+    WHERE {{ parse_form_int('Units_Sold') }} > 0
+      AND {{ parse_form_date('Date') }} IS NOT NULL
 ),
 
 with_amounts AS (

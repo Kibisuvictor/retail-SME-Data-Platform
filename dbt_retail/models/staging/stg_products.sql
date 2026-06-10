@@ -34,10 +34,10 @@ cleaned AS (
         TRIM(Product_Name)                                      AS product_name,
         TRIM(Category)                                          AS category,
         TRIM(Unit_of_Measure)                                   AS unit_of_measure,
-        SAFE_CAST(Current_Selling_Price AS NUMERIC)             AS selling_price,
+        {{ parse_form_number('Current_Selling_Price') }}        AS selling_price,
 
         COALESCE(
-            SAFE_CAST(Reorder_Level AS INT64), 5
+            {{ parse_form_int('Reorder_Level') }}, 5
         )                                                       AS reorder_level,
 
         CASE
@@ -45,11 +45,10 @@ cleaned AS (
             ELSE FALSE
         END                                                     AS is_active,
 
-        SAFE_CAST(Timestamp AS TIMESTAMP)                       AS submitted_at
+        {{ parse_form_timestamp('Timestamp') }}                 AS submitted_at
 
     FROM source
-    WHERE SAFE_CAST(Current_Selling_Price AS NUMERIC) IS NOT NULL
-      AND SAFE_CAST(Current_Selling_Price AS NUMERIC) > 0
+    WHERE {{ parse_form_number('Current_Selling_Price') }} > 0
 ),
 
 deduped AS (
