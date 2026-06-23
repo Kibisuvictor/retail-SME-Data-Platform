@@ -17,22 +17,17 @@ models:
           - not_null
           - accepted_values:
               values:
-                - Cleaning Supplies
-                - Cooking & Kitchen
-                - Food & Groceries
-                - Personal Care
-                - Baby & Child
-                - Health & Wellness
-                - Stationery & Office
-                - Home & Bedding
-                - Electronics & Lighting
-                - Hardware & Tools
-                - Beverages
+                - Flooring
+                - Window Treatments
+                - Wall & Ceiling Decor
+                - Bathroom & Balcony
+                - Home Accessories
+                - Hardware & Fixings
                 - Other
       - name: unit_of_measure
         tests:
           - accepted_values:
-              values: [Piece, Kg, Litre, Pack]
+              values: [Piece, Pair, Set, Sq Metre, Roll, Box]
       - name: selling_price
         tests: [not_null]
       - name: is_active
@@ -63,6 +58,25 @@ models:
           - not_null
           - accepted_values:
               values: ['M-Pesa', 'Bank']
+      - name: unit
+        description: >
+          Business unit/branch that made this sale. NULL for sales recorded
+          before this field was added to the Form — not enforced not_null
+          so historical rows aren't flagged as failures.
+        tests:
+          - accepted_values:
+              values:
+                - Cosmic Choices
+                - Jesilog
+                - Tabasamu
+                - Onpoint
+                - Nayomie
+                - Prince
+                - Hope
+                - Hope & Home
+                - Tsavo
+                - Rossanah
+
   - name: stg_expenses
     description: "Cleaned expense records."
     columns:
@@ -87,6 +101,21 @@ models:
           - not_null
           - accepted_values:
               values: ['M-Pesa', 'Bank']
+      - name: unit
+        description: "Business unit/branch this expense belongs to. NULL for legacy rows."
+        tests:
+          - accepted_values:
+              values:
+                - Cosmic Choices
+                - Jesilog
+                - Tabasamu
+                - Onpoint
+                - Nayomie
+                - Prince
+                - Hope
+                - Hope & Home
+                - Tsavo
+                - Rossanah
 
   - name: stg_returns
     description: "Cleaned return transactions from the dedicated Returns Form."
@@ -122,6 +151,21 @@ models:
           - not_null
           - accepted_values:
               values: ['M-Pesa', 'Bank', 'Store Credit', 'No Refund']
+      - name: unit
+        description: "Business unit/branch that processed this return. NULL for legacy rows."
+        tests:
+          - accepted_values:
+              values:
+                - Cosmic Choices
+                - Jesilog
+                - Tabasamu
+                - Onpoint
+                - Nayomie
+                - Prince
+                - Hope
+                - Hope & Home
+                - Tsavo
+                - Rossanah
 
   - name: stg_inventory_purchases
     description: "Cleaned inventory purchase records."
@@ -140,3 +184,18 @@ models:
         tests: [not_null]
       - name: unit_cost
         tests: [not_null]
+      - name: unit
+        description: "Business unit/branch that received this stock. NULL for legacy rows."
+        tests:
+          - accepted_values:
+              values:
+                - Cosmic Choices
+                - Jesilog
+                - Tabasamu
+                - Onpoint
+                - Nayomie
+                - Prince
+                - Hope
+                - Hope & Home
+                - Tsavo
+                - Rossanah

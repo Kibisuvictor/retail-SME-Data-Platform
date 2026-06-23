@@ -15,10 +15,19 @@ models:
         description: "TRUE when stock_on_hand <= reorder_level"
 
   - name: daily_sales_summary
-    description: "One row per day. Powers all time-series charts."
+    description: >
+      One row per (day, business unit). Powers all time-series charts and
+      can be filtered or broken down by unit in Looker Studio.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - sale_date
+            - unit
     columns:
       - name: sale_date
-        tests: [unique, not_null]
+        tests: [not_null]
+      - name: unit
+        description: "Business unit/branch. NULL for sales recorded before this field existed."
 
   - name: product_performance
     description: "Per-product revenue, volume, and estimated profit."
@@ -33,20 +42,52 @@ models:
         tests: [unique, not_null]
 
   - name: expense_summary
-    description: "Daily expense totals by category."
+    description: "Daily expense totals by category and business unit."
+    columns:
+      - name: unit
+        description: "Business unit/branch. NULL for expenses recorded before this field existed."
 
   - name: monthly_profit
-    description: "Monthly P&L: revenue minus returns, COGS, and operating expenses."
+    description: >
+      Monthly P&L by business unit: revenue minus returns, COGS, and
+      operating expenses. One row per (month, business unit).
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - unit
+    columns:
+      - name: unit
+        description: "Business unit/branch. NULL for activity recorded before this field existed."
+
+  - name: unit_performance
+    description: >
+      All-time ranking per business unit — the primary mart for answering
+      "which unit performs better". One row per unit (always 10 rows, even
+      for units with zero activity so far). Excludes historical rows that
+      predate the Business Unit field (unit = NULL), unlike daily_sales_summary
+      and monthly_profit which include them in grand totals.
+    columns:
+      - name: unit
+        tests: [unique, not_null]
+      - name: total_revenue
+        description: "All-time net sales revenue attributed to this unit."
+      - name: estimated_net_profit
+        description: "total_revenue - total_return_value - total_cogs - total_expenses"
+      - name: return_rate_pct
+        description: "Units returned as a % of units sold — lower is better."
 
   - name: returns_analysis
     description: >
-      Return transactions enriched with product info, return rates, and all
-      dimensions needed for the Returns Analysis dashboard in Looker Studio.
+      Return transactions enriched with product info, business unit, return
+      rates, and all dimensions needed for the Returns Analysis dashboard.
     columns:
       - name: return_id
         tests: [unique, not_null]
       - name: return_date
         tests: [not_null]
+      - name: unit
+        description: "Business unit/branch that processed this return. NULL for legacy rows."
       - name: return_reason
         tests:
           - accepted_values:

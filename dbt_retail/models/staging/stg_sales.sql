@@ -17,6 +17,7 @@
     "Payment Method"          → Payment_Method
     "Customer Phone Number"   → Customer_Phone_Number
     "Customer Type"           → Customer_Type
+    "Business Unit"           → Business_Unit
     "Notes"                   → Notes
 
   Note: "Return" column removed — returns now handled by dedicated Returns Form.
@@ -67,6 +68,11 @@ cleaned AS (
         END                                                         AS customer_phone,
 
         TRIM(COALESCE(Customer_Type, ''))                           AS customer_type,
+
+        -- Business unit (branch/division). NULL for rows entered before
+        -- this field existed — accepted_values test ignores NULLs.
+        NULLIF(TRIM(COALESCE(Business_Unit, '')), '')               AS unit,
+
         NULLIF(TRIM(COALESCE(Notes, '')), '')                       AS notes,
         {{ parse_form_timestamp('Timestamp') }}                     AS submitted_at
 

@@ -2,17 +2,22 @@
   config(
     materialized = 'table',
     dataset      = 'retail_marts',
-    description  = 'Daily sales aggregates. Returns sourced from dedicated Returns Form.'
+    description  = 'Daily sales aggregates by business unit. Returns sourced from dedicated Returns Form.'
   )
 }}
 
 /*
+  Grain: one row per (sale_date, unit).
   stg_sales contains only sales; returns come from stg_returns (dedicated form).
+  `unit` will be NULL for historical rows recorded before the Business Unit
+  field existed on the Forms — these still aggregate correctly, they just
+  won't be attributable to a specific branch when filtering by unit.
 */
 
 WITH daily_sales AS (
     SELECT
         sale_date,
+        unit,
         COUNT(*)                                                        AS transaction_count,
         SUM(units_sold)                                                 AS units_sold,
         ROUND(SUM(gross_amount), 2)                                     AS gross_revenue,
@@ -25,21 +30,31 @@ WITH daily_sales AS (
         COUNT(DISTINCT customer_phone)                                  AS unique_customers_with_phone,
         COUNT(DISTINCT salesperson_name)                                AS active_salespeople
     FROM {{ ref('stg_sales') }}
-    GROUP BY sale_date
+    GROUP BY sale_date, unit
 ),
 
 daily_returns AS (
     SELECT
         return_date                         AS sale_date,
+        unit,
         SUM(units_returned)                 AS units_returned,
         ROUND(SUM(return_value), 2)         AS returns_value,
         COUNT(*)                            AS return_transaction_count
     FROM {{ ref('stg_returns') }}
-    GROUP BY return_date
+    GROUP BY return_date, unit
+),
+
+-- All (date, unit) combinations seen in either sales or returns, so a unit
+-- with returns but no sales on a given day (or vice versa) is not dropped.
+all_keys AS (
+    SELECT sale_date, unit FROM daily_sales
+    UNION DISTINCT
+    SELECT sale_date, unit FROM daily_returns
 )
 
 SELECT
-    s.sale_date,
+    k.sale_date,
+    k.unit,
 
     -- Sales
     COALESCE(s.transaction_count, 0)        AS transaction_count,
@@ -68,11 +83,14 @@ SELECT
     COALESCE(s.active_salespeople, 0)          AS active_salespeople,
 
     -- Date dimensions for Looker Studio filters
-    EXTRACT(DAYOFWEEK FROM s.sale_date)     AS day_of_week,
-    EXTRACT(DAY FROM s.sale_date)           AS day_of_month,
-    DATE_TRUNC(s.sale_date, WEEK(MONDAY))   AS week_start,
-    DATE_TRUNC(s.sale_date, MONTH)          AS month_start
+    EXTRACT(DAYOFWEEK FROM k.sale_date)     AS day_of_week,
+    EXTRACT(DAY FROM k.sale_date)           AS day_of_month,
+    DATE_TRUNC(k.sale_date, WEEK(MONDAY))   AS week_start,
+    DATE_TRUNC(k.sale_date, MONTH)          AS month_start
 
-FROM daily_sales s
-LEFT JOIN daily_returns r ON s.sale_date = r.sale_date
-ORDER BY s.sale_date DESC
+FROM all_keys k
+LEFT JOIN daily_sales   s ON k.sale_date = s.sale_date
+                          AND COALESCE(k.unit, '_none_') = COALESCE(s.unit, '_none_')
+LEFT JOIN daily_returns r ON k.sale_date = r.sale_date
+                          AND COALESCE(k.unit, '_none_') = COALESCE(r.unit, '_none_')
+ORDER BY k.sale_date DESC, k.unit

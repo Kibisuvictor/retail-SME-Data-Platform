@@ -17,6 +17,7 @@
     "Requested Refund Method"                               → Requested_Refund_Method
     "Customer Phone Number (Optional)"                      → Customer_Phone_Number
     "Notes and Further Explanation (Optional)"              → Notes
+    "Business Unit"                                         → Business_Unit
 */
 
 WITH source AS (
@@ -72,6 +73,9 @@ cleaned AS (
             THEN TRIM(Customer_Phone_Number)
             ELSE NULL
         END                                                         AS customer_phone,
+
+        -- Business unit (branch/division) that processed this return.
+        NULLIF(TRIM(COALESCE(Business_Unit, '')), '')               AS unit,
 
         NULLIF(TRIM(COALESCE(Notes, '')), '')                       AS notes,
         {{ parse_form_timestamp('Timestamp') }}                     AS submitted_at

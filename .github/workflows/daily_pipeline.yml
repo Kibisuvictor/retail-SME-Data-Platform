@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r etl/requirements.txt
-          pip install dbt-bigquery==1.11.1
+          pip install -r dbt_retail/requirements.txt
 
       # ── Step 1: Extract from Google Sheets → load BigQuery raw tables ──
       - name: Run ETL (Sheets → BigQuery)

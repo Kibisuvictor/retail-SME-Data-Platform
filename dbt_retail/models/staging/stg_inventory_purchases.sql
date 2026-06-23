@@ -15,6 +15,7 @@
     "Supplier Name"             → Supplier_Name
     "Payment Method"            → Payment_Method
     "Notes/Comments (Optional)" → Notes_Comments
+    "Business Unit"             → Business_Unit
 */
 
 WITH source AS (
@@ -50,6 +51,10 @@ cleaned AS (
         NULLIF(TRIM(COALESCE(Supplier_Name, '')), '')                   AS supplier_name,
         TRIM(Payment_Method)                                            AS payment_method,
         NULLIF(TRIM(COALESCE(Notes_Comments, '')), '')                  AS notes,
+
+        -- Business unit (branch/division) that received this stock.
+        NULLIF(TRIM(COALESCE(Business_Unit, '')), '')                   AS unit,
+
         {{ parse_form_timestamp('Timestamp') }}                         AS submitted_at
 
     FROM source
@@ -67,6 +72,7 @@ SELECT
     ROUND(units_purchased * unit_cost, 2)   AS total_cost,
     supplier_name,
     payment_method,
+    unit,
     notes,
     submitted_at
 FROM cleaned

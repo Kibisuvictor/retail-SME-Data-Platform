@@ -67,6 +67,7 @@ SHEETS = {
             "Payment Method":         "Payment_Method",
             "Customer Phone Number":  "Customer_Phone_Number",
             "Customer Type":          "Customer_Type",
+            "Business Unit":          "Business_Unit",
             "Notes":                  "Notes",
         },
     },
@@ -80,6 +81,7 @@ SHEETS = {
             "Description":       "Description",
             "Paid Via":          "Paid_Via",
             "Recorded By":       "Recorded_By",
+            "Business Unit":     "Business_Unit",
         },
     },
     "Inventory": {
@@ -93,6 +95,7 @@ SHEETS = {
             "Supplier Name":               "Supplier_Name",
             "Payment Method":              "Payment_Method",
             "Notes/Comments (Optional)":   "Notes_Comments",
+            "Business Unit":               "Business_Unit",
         },
     },
     "Returns": {
@@ -108,6 +111,7 @@ SHEETS = {
             "Requested Refund Method":                                  "Requested_Refund_Method",
             "Customer Phone Number (Optional)":                         "Customer_Phone_Number",
             "Notes and Further Explanation (Optional)":                 "Notes",
+            "Business Unit":                                            "Business_Unit",
         },
     },
     "Products": {

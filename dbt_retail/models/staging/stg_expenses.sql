@@ -13,7 +13,8 @@
     "Amount (KES)"      → Amount_KES
     "Description"       → Description
     "Paid Via"          → Paid_Via
-    "Recorded By"       → Recorded_By
+    "Recorded By"        → Recorded_By
+    "Business Unit"      → Business_Unit
 */
 
 WITH source AS (
@@ -40,6 +41,11 @@ cleaned AS (
         NULLIF(TRIM(COALESCE(Description, '')), '')     AS description,
         TRIM(Paid_Via)                                  AS paid_via,
         UPPER(TRIM(Recorded_By))                        AS recorded_by,
+
+        -- Business unit (branch/division). NULL for rows predating this field
+        -- — accepted_values test ignores NULLs, so historical data won't fail.
+        NULLIF(TRIM(COALESCE(Business_Unit, '')), '')   AS unit,
+
         {{ parse_form_timestamp('Timestamp') }}         AS submitted_at
 
     FROM source

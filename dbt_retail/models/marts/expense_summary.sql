@@ -2,13 +2,14 @@
   config(
     materialized = 'table',
     dataset      = 'retail_marts',
-    description  = 'Daily expense totals by category.'
+    description  = 'Daily expense totals by category and business unit.'
   )
 }}
 
 SELECT
     expense_date,
     expense_category,
+    unit,
 
     COUNT(*)                                                AS transaction_count,
     ROUND(SUM(amount), 2)                                   AS total_amount,
@@ -20,5 +21,5 @@ SELECT
     DATE_TRUNC(expense_date, WEEK(MONDAY))                  AS week_start
 
 FROM {{ ref('stg_expenses') }}
-GROUP BY expense_date, expense_category
+GROUP BY expense_date, expense_category, unit
 ORDER BY expense_date DESC, total_amount DESC
