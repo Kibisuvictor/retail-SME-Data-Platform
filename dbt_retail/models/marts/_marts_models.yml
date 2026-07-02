@@ -30,10 +30,21 @@ models:
         description: "Business unit/branch. NULL for sales recorded before this field existed."
 
   - name: product_performance
-    description: "Per-product revenue, volume, and estimated profit."
+    description: >
+      Per-variant sales, revenue, and accurate gross profit.
+      Profit uses cost_price from stg_products (entered in Product Master Form)
+      — exact margin per variant, not an approximation.
     columns:
       - name: product_key
         tests: [unique, not_null]
+      - name: product_family
+        description: "e.g. 'Locks' from 'Locks - Moment'"
+      - name: product_variant
+        description: "e.g. 'Moment' from 'Locks - Moment'"
+      - name: total_gross_profit
+        description: "Revenue - COGS (using actual cost price) - returns value"
+      - name: gross_margin_pct
+        description: "Gross profit as % of revenue — accurate per variant"
 
   - name: salesperson_performance
     description: "Per-salesperson transaction and revenue metrics."
@@ -63,7 +74,7 @@ models:
   - name: unit_performance
     description: >
       All-time ranking per business unit — the primary mart for answering
-      "which unit performs better". One row per unit (always 10 rows, even
+      "which unit performs better". One row per unit (always 12 rows, even
       for units with zero activity so far). Excludes historical rows that
       predate the Business Unit field (unit = NULL), unlike daily_sales_summary
       and monthly_profit which include them in grand totals.

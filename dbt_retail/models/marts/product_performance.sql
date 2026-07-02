@@ -2,20 +2,19 @@
   config(
     materialized = 'table',
     dataset      = 'retail_marts',
-    description  = 'Per-product sales, revenue, and estimated profit. Returns from dedicated Returns Form.'
+    description  = 'Per-variant sales, revenue, and ACCURATE profit using actual cost price per product.'
   )
 }}
 
-WITH latest_cost AS (
-    SELECT
-        product_key,
-        ARRAY_AGG(unit_cost  ORDER BY purchase_date DESC LIMIT 1)[OFFSET(0)] AS latest_cost_price,
-        ARRAY_AGG(purchase_date ORDER BY purchase_date DESC LIMIT 1)[OFFSET(0)] AS last_restocked_date
-    FROM {{ ref('stg_inventory_purchases') }}
-    GROUP BY product_key
-),
+/*
+  Profit is now calculated using the product's own cost_price from stg_products
+  (entered by the owner in the Product Master Form) rather than the approximate
+  COGS from inventory purchases. This gives exact margin per variant.
 
-sales_agg AS (
+  Formula: gross_profit = (unit_price - cost_price) × units_sold
+*/
+
+WITH sales_agg AS (
     SELECT
         product_key,
         COUNT(*)                                AS total_transactions,
@@ -36,16 +35,40 @@ returns_agg AS (
         ROUND(SUM(return_value), 2)             AS total_return_value
     FROM {{ ref('stg_returns') }}
     GROUP BY product_key
+),
+
+-- Accurate profit per transaction using actual cost price
+profit_calc AS (
+    SELECT
+        s.product_key,
+        ROUND(
+            SUM(
+                s.units_sold
+                * GREATEST(s.unit_price - COALESCE(p.cost_price, 0), 0)
+            ), 2
+        )                                       AS total_gross_profit,
+        ROUND(
+            SUM(s.units_sold * COALESCE(p.cost_price, 0)), 2
+        )                                       AS total_cogs
+    FROM {{ ref('stg_sales') }} s
+    LEFT JOIN {{ ref('stg_products') }} p ON s.product_key = p.product_key
+    GROUP BY s.product_key
 )
 
 SELECT
     p.product_key,
     p.product_name,
+    p.product_family,
+    p.product_variant,
     p.category,
     p.unit_of_measure,
     p.selling_price                                     AS current_selling_price,
+    p.cost_price                                        AS current_cost_price,
+    p.unit_margin_kes                                   AS current_unit_margin_kes,
+    p.unit_margin_pct                                   AS current_unit_margin_pct,
     p.reorder_level,
 
+    -- Sales metrics
     COALESCE(s.total_transactions, 0)                   AS total_transactions,
     COALESCE(s.total_units_sold, 0)                     AS total_units_sold,
     COALESCE(r.total_units_returned, 0)                 AS total_units_returned,
@@ -56,34 +79,29 @@ SELECT
     s.first_sale_date,
     s.last_sale_date,
 
-    COALESCE(lc.latest_cost_price, 0)                   AS latest_cost_price,
-    lc.last_restocked_date,
-
-    -- Estimated gross profit (net of returns)
+    -- Accurate profit (cost price × units sold)
+    COALESCE(pc.total_cogs, 0)                          AS total_cogs,
     ROUND(
-        COALESCE(s.total_revenue, 0)
-        - COALESCE(r.total_return_value, 0)
-        - (COALESCE(s.total_units_sold, 0) * COALESCE(lc.latest_cost_price, 0)),
+        COALESCE(pc.total_gross_profit, 0)
+        - COALESCE(r.total_return_value, 0),
         2
-    )                                                   AS estimated_gross_profit,
+    )                                                   AS total_gross_profit,
 
     -- Gross margin %
     CASE
         WHEN COALESCE(s.total_revenue, 0) > 0
         THEN ROUND(
             (
-                COALESCE(s.total_revenue, 0)
+                COALESCE(pc.total_gross_profit, 0)
                 - COALESCE(r.total_return_value, 0)
-                - (COALESCE(s.total_units_sold, 0) * COALESCE(lc.latest_cost_price, 0))
-            ) / s.total_revenue * 100,
-            1
+            ) / s.total_revenue * 100, 1
         )
-        ELSE 0
+        ELSE NULL
     END                                                 AS gross_margin_pct
 
 FROM {{ ref('stg_products') }} p
 LEFT JOIN sales_agg   s  ON p.product_key = s.product_key
 LEFT JOIN returns_agg r  ON p.product_key = r.product_key
-LEFT JOIN latest_cost lc ON p.product_key = lc.product_key
+LEFT JOIN profit_calc pc ON p.product_key = pc.product_key
 WHERE p.is_active = TRUE
 ORDER BY total_revenue DESC

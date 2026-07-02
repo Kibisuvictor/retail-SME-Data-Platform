@@ -27,9 +27,20 @@ models:
       - name: unit_of_measure
         tests:
           - accepted_values:
-              values: [Piece, Pair, Set, Sq Metre, Roll, Box]
+              values: [Piece, Metre, "Sq Metre", Roll, Set]
       - name: selling_price
         tests: [not_null]
+      - name: cost_price
+        description: "Cost price per variant in KES. NULL if not entered — profit will be 0 for that product."
+        tests: [not_null]
+      - name: product_family
+        description: "Extracted from name before ' - ' e.g. 'Locks' from 'Locks - Moment'."
+      - name: product_variant
+        description: "Extracted from name after ' - ' e.g. 'Moment' from 'Locks - Moment'."
+      - name: unit_margin_kes
+        description: "selling_price - cost_price per unit."
+      - name: unit_margin_pct
+        description: "Unit margin as % of selling price."
       - name: is_active
         tests: [not_null]
 
@@ -66,16 +77,18 @@ models:
         tests:
           - accepted_values:
               values:
-                - Cosmic Choices
-                - Jesilog
-                - Tabasamu
+                - Cosmic Choices FB & IG
+                - Cosmic Choices website
+                - Jesilog FB & IG
+                - Jesilog Website
+                - Tabasamu FB & IG
+                - Tabasamu website
                 - Onpoint
                 - Nayomie
                 - Prince
                 - Hope
                 - Hope & Home
                 - Tsavo
-                - Rossanah
 
   - name: stg_expenses
     description: "Cleaned expense records."
@@ -106,16 +119,18 @@ models:
         tests:
           - accepted_values:
               values:
-                - Cosmic Choices
-                - Jesilog
-                - Tabasamu
+                - Cosmic Choices FB & IG
+                - Cosmic Choices website
+                - Jesilog FB & IG
+                - Jesilog Website
+                - Tabasamu FB & IG
+                - Tabasamu website
                 - Onpoint
                 - Nayomie
                 - Prince
                 - Hope
                 - Hope & Home
                 - Tsavo
-                - Rossanah
 
   - name: stg_returns
     description: "Cleaned return transactions from the dedicated Returns Form."
@@ -156,16 +171,18 @@ models:
         tests:
           - accepted_values:
               values:
-                - Cosmic Choices
-                - Jesilog
-                - Tabasamu
+                - Cosmic Choices FB & IG
+                - Cosmic Choices website
+                - Jesilog FB & IG
+                - Jesilog Website
+                - Tabasamu FB & IG
+                - Tabasamu website
                 - Onpoint
                 - Nayomie
                 - Prince
                 - Hope
                 - Hope & Home
                 - Tsavo
-                - Rossanah
 
   - name: stg_inventory_purchases
     description: "Cleaned inventory purchase records."
@@ -189,13 +206,15 @@ models:
         tests:
           - accepted_values:
               values:
-                - Cosmic Choices
-                - Jesilog
-                - Tabasamu
+                - Cosmic Choices FB & IG
+                - Cosmic Choices website
+                - Jesilog FB & IG
+                - Jesilog Website
+                - Tabasamu FB & IG
+                - Tabasamu website
                 - Onpoint
                 - Nayomie
                 - Prince
                 - Hope
                 - Hope & Home
                 - Tsavo
-                - Rossanah

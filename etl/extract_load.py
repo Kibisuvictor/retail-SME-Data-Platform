@@ -124,6 +124,7 @@ SHEETS = {
             "Current Selling Price (KES)":                               "Current_Selling_Price",
             "Reorder Level (units) - Default is 5":                      "Reorder_Level",
             "Is this product currently active?":                         "Is_Active",
+            "Cost Price (KES)":                                          "Cost_Price_KES",
         },
     },
 }

@@ -14,5 +14,4 @@ JOIN (
     FROM {{ ref('stg_inventory_purchases') }}
     GROUP BY product_key
 ) lc ON s.product_key = lc.product_key
-WHERE s.is_return = FALSE
-  AND s.unit_price < lc.latest_cost_price
+WHERE s.unit_price < lc.latest_cost_price
