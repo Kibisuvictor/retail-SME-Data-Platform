@@ -2,14 +2,20 @@
   config(
     materialized = 'table',
     dataset      = 'retail_marts',
-    description  = 'Per-variant sales, revenue, and ACCURATE profit using actual cost price per product.'
+    description  = 'Per-variant, per-month sales, revenue, and ACCURATE profit using actual cost price per product.'
   )
 }}
 
 /*
-  Profit is now calculated using the product's own cost_price from stg_products
-  (entered by the owner in the Product Master Form) rather than the approximate
-  COGS from inventory purchases. This gives exact margin per variant.
+  Grain: one row per (month, product_key) for every active product, for every
+  month with any sales/returns activity across the catalog — plus the current
+  calendar month, always, even before any activity happens in it. This lets
+  Looker Studio default a date filter to "This month" instead of showing
+  all-time cumulative totals.
+
+  Profit uses the product's own cost_price from stg_products (entered by the
+  owner in the Product Master Form) rather than the approximate COGS from
+  inventory purchases. This gives exact margin per variant.
 
   Formula: gross_profit = (unit_price - cost_price) × units_sold
 */
@@ -17,6 +23,7 @@
 WITH sales_agg AS (
     SELECT
         product_key,
+        DATE_TRUNC(sale_date, MONTH)            AS month,
         COUNT(*)                                AS total_transactions,
         SUM(units_sold)                         AS total_units_sold,
         ROUND(SUM(net_amount), 2)               AS total_revenue,
@@ -25,22 +32,24 @@ WITH sales_agg AS (
         MIN(sale_date)                          AS first_sale_date,
         MAX(sale_date)                          AS last_sale_date
     FROM {{ ref('stg_sales') }}
-    GROUP BY product_key
+    GROUP BY product_key, DATE_TRUNC(sale_date, MONTH)
 ),
 
 returns_agg AS (
     SELECT
         product_key,
+        DATE_TRUNC(return_date, MONTH)          AS month,
         SUM(units_returned)                     AS total_units_returned,
         ROUND(SUM(return_value), 2)             AS total_return_value
     FROM {{ ref('stg_returns') }}
-    GROUP BY product_key
+    GROUP BY product_key, DATE_TRUNC(return_date, MONTH)
 ),
 
 -- Accurate profit per transaction using actual cost price
 profit_calc AS (
     SELECT
         s.product_key,
+        DATE_TRUNC(s.sale_date, MONTH)          AS month,
         ROUND(
             SUM(
                 s.units_sold
@@ -52,10 +61,28 @@ profit_calc AS (
         )                                       AS total_cogs
     FROM {{ ref('stg_sales') }} s
     LEFT JOIN {{ ref('stg_products') }} p ON s.product_key = p.product_key
-    GROUP BY s.product_key
+    GROUP BY s.product_key, DATE_TRUNC(s.sale_date, MONTH)
+),
+
+-- Every month with any activity, plus the current month, so the catalog
+-- always has a (possibly all-zero) row set for "this month".
+all_months AS (
+    SELECT month FROM sales_agg
+    UNION DISTINCT
+    SELECT month FROM returns_agg
+    UNION DISTINCT
+    SELECT DATE_TRUNC(CURRENT_DATE(), MONTH)
+),
+
+product_months AS (
+    SELECT p.product_key, m.month
+    FROM {{ ref('stg_products') }} p
+    CROSS JOIN all_months m
+    WHERE p.is_active = TRUE
 )
 
 SELECT
+    pm.month,
     p.product_key,
     p.product_name,
     p.product_family,
@@ -99,9 +126,9 @@ SELECT
         ELSE NULL
     END                                                 AS gross_margin_pct
 
-FROM {{ ref('stg_products') }} p
-LEFT JOIN sales_agg   s  ON p.product_key = s.product_key
-LEFT JOIN returns_agg r  ON p.product_key = r.product_key
-LEFT JOIN profit_calc pc ON p.product_key = pc.product_key
-WHERE p.is_active = TRUE
-ORDER BY total_revenue DESC
+FROM product_months pm
+JOIN {{ ref('stg_products') }} p       ON pm.product_key = p.product_key
+LEFT JOIN sales_agg   s  ON pm.product_key = s.product_key AND pm.month = s.month
+LEFT JOIN returns_agg r  ON pm.product_key = r.product_key AND pm.month = r.month
+LEFT JOIN profit_calc pc ON pm.product_key = pc.product_key AND pm.month = pc.month
+ORDER BY pm.month DESC, total_revenue DESC

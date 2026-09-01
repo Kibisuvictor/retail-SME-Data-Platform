@@ -49,7 +49,7 @@ faster queries (native tables), and an explicit, testable ingestion step.
 |---|---|---|
 | Raw | `retail_raw` | 5 tables mirroring the Sheet tabs, all STRING, full-refreshed by ETL |
 | Staging | `retail_staging` | `stg_sales`, `stg_expenses`, `stg_inventory_purchases`, `stg_returns`, `stg_products` — typed, deduplicated, validated |
-| Marts | `retail_marts` | `daily_sales_summary`, `monthly_profit`, `inventory_position`, `product_performance`, `salesperson_performance`, `expense_summary`, `returns_analysis`, `customer_insights` |
+| Marts | `retail_marts` | `daily_sales_summary`, `monthly_profit`, `inventory_position`, `product_performance`, `salesperson_performance`, `unit_performance`, `expense_summary`, `returns_analysis`, `customer_insights` |
 
 Key design decisions:
 - **Stock is derived, never stored:** `stock_on_hand = purchases − sales + returns`

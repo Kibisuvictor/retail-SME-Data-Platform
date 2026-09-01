@@ -2,17 +2,24 @@
   config(
     materialized = 'table',
     dataset      = 'retail_marts',
-    description  = 'Per-customer purchase summary with masked phone numbers.'
+    description  = 'Per-customer, per-month purchase summary with masked phone numbers.'
   )
 }}
 
 /*
+  Grain: one row per (month, customer_phone_masked), for every month that
+  customer made at least one purchase. customer_tier and is_repeat_customer
+  are evaluated within that month only (e.g. "VIP this month"), not lifetime —
+  there is no separate all-time version of this mart.
+
   Privacy: phone numbers are masked before surfacing in dashboards.
   Pattern: 0712345678 → 07XX****78
   Full numbers live only in staging.stg_sales (not directly queryable via Looker Studio).
 */
 
 SELECT
+    DATE_TRUNC(sale_date, MONTH)                        AS month,
+
     -- Masked phone: first 4 + **** + last 2 digits
     CONCAT(
         SUBSTR(customer_phone, 1, 4),
@@ -46,5 +53,5 @@ SELECT
 
 FROM {{ ref('stg_sales') }}
 WHERE customer_phone IS NOT NULL
-GROUP BY customer_phone
-ORDER BY total_spent DESC
+GROUP BY DATE_TRUNC(sale_date, MONTH), customer_phone
+ORDER BY month DESC, total_spent DESC

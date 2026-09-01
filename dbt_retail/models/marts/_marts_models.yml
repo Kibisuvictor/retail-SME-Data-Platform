@@ -31,26 +31,44 @@ models:
 
   - name: product_performance
     description: >
-      Per-variant sales, revenue, and accurate gross profit.
+      Per-variant, per-month sales, revenue, and accurate gross profit.
+      One row per (month, product_key) — always all active products, for
+      every month with any activity plus the current month.
       Profit uses cost_price from stg_products (entered in Product Master Form)
       — exact margin per variant, not an approximation.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - product_key
     columns:
+      - name: month
+        tests: [not_null]
       - name: product_key
-        tests: [unique, not_null]
+        tests: [not_null]
       - name: product_family
         description: "e.g. 'Locks' from 'Locks - Moment'"
       - name: product_variant
         description: "e.g. 'Moment' from 'Locks - Moment'"
       - name: total_gross_profit
-        description: "Revenue - COGS (using actual cost price) - returns value"
+        description: "Revenue - COGS (using actual cost price) - returns value, for that month"
       - name: gross_margin_pct
-        description: "Gross profit as % of revenue — accurate per variant"
+        description: "Gross profit as % of revenue — accurate per variant, for that month"
 
   - name: salesperson_performance
-    description: "Per-salesperson transaction and revenue metrics."
+    description: >
+      Per-salesperson, per-month transaction and revenue metrics. One row per
+      (month, salesperson_name), only for months that salesperson sold something.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - salesperson_name
     columns:
+      - name: month
+        tests: [not_null]
       - name: salesperson_name
-        tests: [unique, not_null]
+        tests: [not_null]
 
   - name: expense_summary
     description: "Daily expense totals by category and business unit."
@@ -73,20 +91,29 @@ models:
 
   - name: unit_performance
     description: >
-      All-time ranking per business unit — the primary mart for answering
-      "which unit performs better". One row per unit (always 12 rows, even
-      for units with zero activity so far). Excludes historical rows that
-      predate the Business Unit field (unit = NULL), unlike daily_sales_summary
-      and monthly_profit which include them in grand totals.
+      Per-month ranking per business unit — the primary mart for answering
+      "which unit performs better this month". One row per (month, unit) —
+      always all 12 units, for every month with any activity across the
+      business plus the current month (so it never goes blank on the 1st).
+      Excludes historical rows that predate the Business Unit field
+      (unit = NULL), unlike daily_sales_summary and monthly_profit which
+      include them in grand totals.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - unit
     columns:
+      - name: month
+        tests: [not_null]
       - name: unit
-        tests: [unique, not_null]
+        tests: [not_null]
       - name: total_revenue
-        description: "All-time net sales revenue attributed to this unit."
+        description: "Net sales revenue attributed to this unit, for that month."
       - name: estimated_net_profit
-        description: "total_revenue - total_return_value - total_cogs - total_expenses"
+        description: "total_revenue - total_return_value - total_cogs - total_expenses, for that month"
       - name: return_rate_pct
-        description: "Units returned as a % of units sold — lower is better."
+        description: "Units returned as a % of units sold that month — lower is better."
 
   - name: returns_analysis
     description: >
@@ -113,7 +140,18 @@ models:
               values: ['M-Pesa', 'Bank', 'Store Credit', 'No Refund']
 
   - name: customer_insights
-    description: "Per-customer purchase summary. Phone numbers masked for privacy."
+    description: >
+      Per-customer, per-month purchase summary. Phone numbers masked for
+      privacy. One row per (month, customer_phone_masked) — customer_tier
+      and is_repeat_customer are evaluated within that month, not lifetime.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - month
+            - customer_phone_masked
     columns:
+      - name: month
+        tests: [not_null]
       - name: customer_phone_masked
         description: "Format: 07XX****XX"
+        tests: [not_null]

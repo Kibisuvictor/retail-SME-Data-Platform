@@ -152,14 +152,26 @@ Includes `inventory_value_at_cost`, `inventory_value_at_retail`,
 (units × latest cost per product), `total_operating_expenses`,
 `gross_profit`, `net_profit`, `net_margin_pct`.
 
-### product_performance — one row per product
+### product_performance — one row per (month, product)
 Sales volume/revenue, `total_units_returned` and `total_return_value`
 (from Returns form), `latest_cost_price`, `estimated_gross_profit`
-(net of returns), `gross_margin_pct`.
+(net of returns), `gross_margin_pct` — all scoped to that `month`. Always
+includes every active product for every month with any activity, plus the
+current month (zero-filled if nothing has sold yet). Filter/group on `month`
+in Looker Studio to see a single month instead of all-time totals.
 
-### salesperson_performance — one row per salesperson
+### salesperson_performance — one row per (month, salesperson)
 Transactions, units, revenue, discounts given, average transaction value,
-M-Pesa vs Bank split, `total_returns_processed`, `total_return_value`.
+M-Pesa vs Bank split, `total_returns_processed`, `total_return_value` — all
+scoped to that `month`. Only includes months a salesperson actually sold
+something (no zero-filled current-month row, unlike product/unit performance).
+
+### unit_performance — one row per (month, business unit)
+Revenue, COGS, returns, expenses, `gross_profit`, `estimated_net_profit`,
+`net_margin_pct`, `return_rate_pct` — all scoped to that `month`. Always
+includes all 12 business units for every month with any activity, plus the
+current month (zero-filled if nothing has happened yet this month) — this is
+the mart the Looker Studio "this month" scorecards should point at.
 
 ### expense_summary — one row per day × category
 `transaction_count`, `total_amount`, M-Pesa/Bank split, month/week starts.
@@ -168,7 +180,8 @@ M-Pesa vs Bank split, `total_returns_processed`, `total_return_value`.
 Enriched with `product_name`, `category`, and `product_return_rate_pct`
 (units returned ÷ units sold per product).
 
-### customer_insights — one row per customer with a recorded phone
+### customer_insights — one row per (month, customer with a recorded phone)
 `customer_phone_masked` (07XX****XX — full numbers never leave staging),
-spend totals, `customer_tier` (VIP ≥ 10,000 / Regular ≥ 3,000 / Occasional),
-`is_repeat_customer`, `days_since_last_purchase`.
+spend totals for that month, `customer_tier` (VIP ≥ 10,000 / Regular ≥ 3,000 /
+Occasional) and `is_repeat_customer` evaluated within that month only (not
+lifetime), `days_since_last_purchase`.

@@ -1,6 +1,6 @@
 # Looker Studio Setup Guide
 
-Complete guide to building all 7 dashboards.  
+Complete guide to building all 9 dashboards.  
 Dashboards work on **any phone browser** — share via link, no login required for viewers.
 
 ---
@@ -30,10 +30,23 @@ You need one data source per mart table. Add each:
    - `retail_marts.inventory_position`
    - `retail_marts.product_performance`
    - `retail_marts.salesperson_performance`
+   - `retail_marts.unit_performance`
    - `retail_marts.expense_summary`
    - `retail_marts.monthly_profit`
    - `retail_marts.customer_insights`
    - `retail_marts.returns_analysis`
+
+### A note on `month` filtering
+
+`product_performance`, `salesperson_performance`, `unit_performance`, and
+`customer_insights` each carry a `month` column (one row per month × entity,
+not an all-time total). On any page built from these, add a **Date Range
+Control** (Insert → Date range control), set its field to `month`, and set
+its default range to **"This month"**. Without that control the charts sum
+across every month ever recorded — with it, the page automatically shows
+only the current month and rolls over on its own when a new month starts, no
+manual re-filtering needed. Pick a prior month from the control any time you
+want to look back.
 
 ---
 
@@ -133,6 +146,11 @@ You need one data source per mart table. Add each:
 
 **Purpose:** Which products to promote, reorder, or drop.
 
+**Add a Date Range Control at the top of this page** — field `month`,
+default "This month" (see note above). Every card below reads from
+`product_performance`, so this one control scopes the whole page to the
+current month; switch it to a prior month to look back.
+
 **Card 1 — Top 10 Products by Revenue (Horizontal Bar)**
 - Data: `product_performance`
 - Dimension: `product_name`
@@ -189,6 +207,9 @@ You need one data source per mart table. Add each:
 - Dimension: `product_name`
 - Metric: `total_units_sold`
 - Rows: 15, sort descending
+- Filter: `month` = this month (this page has no page-level date control, so
+  add the filter directly on this card — otherwise it sums units sold across
+  every month ever recorded)
 
 ---
 
@@ -224,6 +245,11 @@ You need one data source per mart table. Add each:
 
 **Purpose:** Who are the best customers?
 
+**Add a Date Range Control at the top of this page** — field `month`,
+default "This month" (see note above). `customer_tier` and
+`is_repeat_customer` are evaluated per month, e.g. "VIP this month," not
+lifetime — switch the control to a prior month to see that month's tiers.
+
 **Card 1 — Total Customers Tracked (Scorecard)**
 - Data: `customer_insights`
 - Metric: COUNT(`customer_phone_masked`)
@@ -247,6 +273,9 @@ You need one data source per mart table. Add each:
 
 **Purpose:** Track who is selling, how much, and how.
 
+**Add a Date Range Control at the top of this page** — field `month`,
+default "This month" (see note above).
+
 **Card 1 — Revenue by Salesperson (Bar)**
 - Data: `salesperson_performance`
 - Dimension: `salesperson_name`
@@ -257,6 +286,39 @@ You need one data source per mart table. Add each:
 
 **Card 3 — Full Table**
 - Columns: `salesperson_name`, `total_transactions`, `total_units_sold`, `total_revenue`, `total_discounts_given`, `avg_transaction_value`, `active_days`
+
+---
+
+## Dashboard 9: Business Unit Comparison
+
+**Purpose:** "Which unit performs better this month" — the question that
+used to require manually filtering an all-time total. Add
+`retail_marts.unit_performance` as a data source if you haven't already.
+
+**Add a Date Range Control at the top of this page** — field `month`,
+default "This month". Every card below reads from `unit_performance`, which
+already always lists all 12 units for the selected month (zero-filled if a
+unit had no activity yet) — no extra "show all units" filter needed.
+
+**Card 1 — Revenue by Unit This Month (Bar Chart)**
+- Data: `unit_performance`
+- Dimension: `unit`
+- Metric: `total_revenue`
+- Sort: `total_revenue` descending
+
+**Card 2 — Net Profit by Unit This Month (Bar Chart)**
+- Metric: `estimated_net_profit`
+- Colour: green above 0, red below 0
+
+**Card 3 — Full Unit Comparison Table**
+- Columns: `unit`, `total_transactions`, `total_revenue`, `total_cogs`, `total_expenses`, `gross_profit`, `estimated_net_profit`, `net_margin_pct`, `return_rate_pct`
+- Sort: `total_revenue` descending
+
+**Card 4 — Revenue Trend by Unit (Line Chart)**
+- Remove the page's date control's effect on this one card (or duplicate the
+  chart on a page without the control): dimension `month`, breakdown
+  dimension `unit`, metric `total_revenue` — shows month-over-month
+  comparison across units instead of a single month.
 
 ---
 
